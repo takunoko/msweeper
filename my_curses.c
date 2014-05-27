@@ -1,8 +1,10 @@
 // cursesの基本的な関数
-#include	<curses.h>
+#include <curses.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 //cursesの初期化
-void init_ncurses(){
+void init_curses(){
 	//ncurses環境の初期化
 	if(initscr() == NULL){
 		fprintf(stderr, "initscr failure\n");
@@ -15,7 +17,7 @@ void init_ncurses(){
 }
 
 //curses終了処理
-void end_ncurses(){
+void end_curses(){
 	if(endwin() == ERR){
 		fprintf(stderr, "endwin failure");
 		exit(EXIT_FAILURE);

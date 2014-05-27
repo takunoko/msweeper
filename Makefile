@@ -1,5 +1,11 @@
-#curses¥é¥¤¥Ö¥é¥ê¤âÍÑ¤¤¤¿»ÅÍÍ
+#cursesã‚’ã‚³ãƒ³ãƒ‘ã‚¤ãƒ«ã™ã‚‹ãŸã‚ã®ã‚ªãƒ—ã‚·ãƒ§ãƒ³
 CURSES_OPT = -lcurses
 
-msweeper : msweeper.c
-	cc -o msweeper msweeper.c ${CURSES_OPT}
+msweeper : msweeper.c my_curses.o
+	cc -o msweeper msweeper.c my_curses.o getchar.o ${CURSES_OPT}
+
+my_curses.o : my_curses.c
+	cc -c my_curses.c
+
+getchar.o : getchar.c
+	cc -c getchar.c
