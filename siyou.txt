@@ -1,0 +1,52 @@
+仕様書
+
+(1) プログラムの仕様（外部仕様，内部仕様）
+   ・プログラムの機能
+   ・プログラムの使い方
+   ・主要なデータ構造
+   ・各関数の仕様（引数，戻り値，処理内容）
+
+仕様書
+	・プログラムの機能
+
+	・プログラムの使い方
+		hjkl か 矢印で移動
+
+	主要なデータ構造
+		int map_size_x, map_size_y;
+		int bom;
+
+	マップ構造体
+	MAP{
+		int data = [-1, 0-8]
+		int disp_flg = [0:非表示, 1:表示, 2:?, 3:F]
+	}
+
+	各関数
+		int main(void)
+			各変数の宣言
+			ゲームを何度も繰り返すループ
+
+		int game_main(MAP *map_data, int x, int y, int bom);
+			ゲームのループ。ゲーム中はここから抜けない。
+
+		void init_curses();
+			cursesを使うための初期化
+		
+		void init_map(MAP *map_data, int x, int y, int bom);
+			マップのサイズに応じて配列を確保
+			ランダムでMを配置
+
+		int judge( int x, int y);
+			x,yの座標があたりか外れか？
+
+		void disp_game( int size_x, int size_y, MAP map_data);
+			画面に色々描画
+
+		char input();
+			文字入力
+			リアルタイムでの入力
+
+
+	追加機能
+		ファイルでスコア記録
