@@ -1,7 +1,7 @@
 #cursesをコンパイルするためのオプション
 CURSES_OPT = -lcurses
 
-msweeper : msweeper.c my_curses.o
+msweeper : msweeper.c my_curses.o getchar.o
 	cc -o msweeper msweeper.c my_curses.o getchar.o ${CURSES_OPT}
 
 my_curses.o : my_curses.c
