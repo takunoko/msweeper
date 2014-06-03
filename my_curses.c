@@ -1,7 +1,6 @@
+#include <stdlib.h>
 // cursesの基本的な関数
 #include <curses.h>
-#include <stdio.h>
-#include <stdlib.h>
 
 //cursesの初期化
 void init_curses(){

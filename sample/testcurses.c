@@ -13,7 +13,7 @@
 /* curses ライブラリを使う際に必要なヘッダ */
 #include	<curses.h>
 
-main(void)
+int main(void)
 {
 	int		x,y;
 	int		c;
