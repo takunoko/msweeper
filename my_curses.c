@@ -9,8 +9,17 @@ void init_curses(){
 		fprintf(stderr, "initscr failure\n");
 		exit(EXIT_FAILURE);
 	}
-	noecho();	//入力された文字を画面に表示しない
+	//色が使えるかどうか
+	if(has_colors() != true){
+		fprintf(stderr, "cant use color\n");
+		exit(EXIT_FAILURE);	
+	}
+	start_color();	//色が使用できるように設定
+
+	echo();	//入力された文字を画面に表示しない
+	cbreak();	//Enterナシでの入力
 	nonl();
+	leaveok(stdscr, FALSE); //カーソル位置を表示
 	intrflush(stdscr, FALSE); //キーボードからの割り込みがあった場合、ウインドウの内容をflashするか
 	keypad(stdscr, TRUE); //FALSE指定でファンクションキーをエスケープシーケンスのまま取り出す
 }

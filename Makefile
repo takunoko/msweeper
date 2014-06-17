@@ -1,9 +1,12 @@
-#cursesã‚’ã‚³ãƒ³ãƒ‘ã‚¤ãƒ«ã™ã‚‹ãŸã‚ã®ã‚ªãƒ—ã‚·ãƒ§ãƒ³
+#curses‚ğƒRƒ“ƒpƒCƒ‹
 CURSES_OPT = -lcurses
 
-msweeper : msweeper.c my_curses.o
-	cc -o msweeper msweeper.c my_curses.o ${CURSES_OPT}
+msweeper : msweeper.c my_curses.o init_game.o
+	cc -o msweeper msweeper.c my_curses.o init_game.o ${CURSES_OPT}
 
 my_curses.o : my_curses.c
 	cc -c my_curses.c
+
+init_game.o : init_game.c
+	cc -c init_game.c
 
