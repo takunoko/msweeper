@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <curses.h>
 
-#include "msweeper.h"
+#include "ms_game.h"
 #include "init_game.h"
 
 void init_app(){
@@ -123,6 +123,9 @@ int get_risk(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int pos_x, int pos_y, int r
 		risk = MAP_BOM;
 	}
 
+	if(risk == 0)
+		risk = MAP_NONE;
+
 	return risk;
 }
 
@@ -137,7 +140,7 @@ void init_char_color(){
 	init_pair( 8, COLOR_MAGENTA, COLOR_BLACK);
 
 	init_pair( MAP_NONE, COLOR_WHITE, COLOR_BLACK);
-	init_pair( MAP_WALL, COLOR_WHITE, COLOR_WHITE);
+	init_pair( MAP_WALL, COLOR_BLACK, COLOR_WHITE);
 	init_pair( MAP_BOM, COLOR_RED, COLOR_RED);
 	init_pair( MAP_CLOSE, COLOR_WHITE, COLOR_WHITE);
 }
