@@ -4,11 +4,12 @@
 #include "ms_game.h"
 #include "init_game.h"
 
+// 1回のゲームは、この中でループ
 int game_loop(){
 	int game_status;
 	int input_char = ' ';
 
-	MAP map_data[MAP_MAX_ROW][MAP_MAX_COL];
+	MAP map_data[(MAP_MAX_ROW)][(MAP_MAX_COL)];
 	int map_row_size, map_col_size, bom;
 	int pos_x, pos_y;
 
@@ -27,33 +28,43 @@ void disp_game(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int row_size, int col_siz
 	int x,y;
 	for(y=0; y<col_size+2; y++){
 		for(x=0; x<row_size+2; x++){
-			if(map_data[x][y].disp_flg == MAP_OPEN){
-				attron(COLOR_PAIR(map_data[x][y].data));
-				switch(map_data[x][y].data){
-					case MAP_WALL:
-						mvaddch(y,x*2,'+');
-						break;
-					case MAP_NONE:
-						mvaddch(y,x*2,' ');
-						break;
-					case MAP_BOM:
-						mvaddch(y,x*2,'*');
-						break;
-					default:
-						mvaddch(y,x*2,map_data[x][y].data + '0');
-						break;
-				}
-		   }else{
-		   	switch(map_data[x][y].data){
-		   		case MAP_WALL:
+			switch(map_data[x][y].disp_flg){
+			//switch(MAP_OPEN){
+				case MAP_OPEN:
+					attron(COLOR_PAIR(map_data[x][y].data));
+					switch(map_data[x][y].data){
+						case MAP_WALL:
+							mvaddch(y,x*2,'+');
+							break;
+						case MAP_NONE:
+							mvaddch(y,x*2,' ');
+							break;
+						case MAP_BOM:
+							mvaddch(y,x*2,'*');
+							break;
+						default:
+							mvaddch(y,x*2,map_data[x][y].data + '0');
+							break;
+					}
+					break;
+
+				case MAP_FLAG:
 						attron(COLOR_PAIR(MAP_WALL));
-		   			mvaddch(y,x*2,'+');
-		   			break;
-		   		default:
-						attron(COLOR_PAIR(MAP_CLOSE));
-		   			mvaddch(y,x*2,'#');
-		   			break;
-		   	}
+						mvaddch(y,x*2,'F');
+					break;
+				
+				default:
+					switch(map_data[x][y].data){
+						case MAP_WALL:
+							attron(COLOR_PAIR(MAP_WALL));
+							mvaddch(y,x*2,'+');
+							break;
+						default:
+							attron(COLOR_PAIR(MAP_CLOSE));
+							mvaddch(y,x*2,'#');
+							break;
+					}
+					break;
 			}
 		}
 		move( (pos_y+1), (pos_x+1)*2);
@@ -62,7 +73,7 @@ void disp_game(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int row_size, int col_siz
 	}
 }
 
-// 
+// 入力されたキーをゲームように変換(ゲームで使用しないキーは入力不可)
 int input_key(){
 	int ch;
 	int flg=0;
@@ -87,6 +98,8 @@ int input_key(){
 			case KEY_DOWN:
 			case ' ':
 			case 'f':
+			case 'F':
+			case 'q':
 				break;
 			default :
 				flg = 1;
@@ -95,7 +108,7 @@ int input_key(){
 	}while(flg == 1);
 	return ch;
 }
-
+// 移動イベント(キーボードイベント)
 void move_pos(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int ch, int row_size, int col_size, int *pos_x, int *pos_y){
 	switch(ch){
 		case KEY_LEFT:
@@ -113,9 +126,21 @@ void move_pos(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int ch, int row_size, int 
 		case ' ':
 			map_open( map_data, (*pos_x)+1, (*pos_y)+1, row_size, col_size);
 			break;
+		case 'f':
+		case 'F':
+			switch(map_data[*pos_x+1][*pos_y+1].disp_flg){
+				case MAP_OPEN:
+					break;
+				case MAP_FLAG:
+					map_data[*pos_x+1][*pos_y+1].disp_flg = MAP_CLOSE;
+					break;
+				case MAP_CLOSE:
+					map_data[*pos_x+1][*pos_y+1].disp_flg = MAP_FLAG;
+					break;
+			}
 	}
 }
-
+// マップの開くが選択された時
 void map_open(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int x, int y, int row_size, int col_size){
 	if( map_data[x][y].data == MAP_BOM){
 	}else{
@@ -128,7 +153,7 @@ void map_open(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int x, int y, int row_size
 		}
 	}
 }
-
+// 0が続く限りマップを開き続ける
 void open_0(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int x, int y){
 	map_data[x][y].disp_flg = MAP_OPEN;
 	// 上

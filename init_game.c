@@ -11,17 +11,54 @@ void init_app(){
 }
 
 void init_map(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int *row_size, int *col_size, int *bom, int *pos_x, int *pos_y){
-	// printf("サイズを入力してください (x,y) :");
-	// scanf("%d,%d", row_size, col_size);
-	// printf("Mの数を入力してください :");
-	// scanf("%d",bom);
+	*row_size = *col_size = 10;
+	*bom = 10;
 
-	// printf(" x:%d, y:%d, box:%d\n この内容でゲームを開始します\n", *row_size, *col_size, *bom);
+	int inputchar = '0';
+	int max_bom = 0;
+	int select = 0;
+
+	while(inputchar != ' '){
+		mvprintw(10,10,"  row     col    bom");
+		mvprintw(11,10,"%4d     %4d    %4d", *row_size, *col_size, *bom);
+		max_bom = (*row_size) * (*col_size) - 1;
+		inputchar = input_key();
+		if(inputchar == KEY_RIGHT){
+			select = (select+1) % SELECT_SIZE;
+		}else if(inputchar == KEY_LEFT){
+			select = (select+SELECT_SIZE-1) % SELECT_SIZE;
+		}else{
+			switch(select){
+				case 0:
+					if(inputchar == KEY_UP)
+						*row_size = ((*row_size) % (MAP_MAX_ROW-2))+1;
+					if(inputchar == KEY_DOWN)
+						*row_size = (((*row_size)+(MAP_MAX_ROW-3-1)) % (MAP_MAX_ROW-2))+1;
+					break;
+				case 1:
+					if(inputchar == KEY_UP)
+						*col_size = ((*col_size) % (MAP_MAX_COL-2))+1;
+					if(inputchar == KEY_DOWN)
+						*col_size = (((*col_size)+(MAP_MAX_COL-3-1)) % (MAP_MAX_COL-2))+1;
+					break;
+				case 2:
+					if(inputchar == KEY_UP)
+						*bom = ((*bom) % (max_bom))+1;
+					if(inputchar == KEY_DOWN)
+						*bom = (((*bom)+(max_bom-2)) % max_bom)+1;
+					break;
+			}
+		}
+	}
+	//printf("Mの数を入力してください :");
+	//scanf("%d",bom);
+
+	//printf(" x:%d, y:%d, box:%d\n この内容でゲームを開始します\n", *row_size, *col_size, *bom);
 
 	/* デバッグ用 */
-	*row_size = 8;
-	*col_size = 6;
-	*bom = 10;
+	// *row_size = 8;
+	// *col_size = 6;
+	// *bom = 10;
 
 	*pos_x = *row_size/2;
 	*pos_y = *col_size/2;
@@ -37,6 +74,8 @@ void init_map(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int *row_size, int *col_si
 	}
 	create_bom(map_data, *row_size, *col_size, *bom);
 	create_map_num(map_data, *row_size, *col_size);
+	
+	clear();
 }
 
 void create_bom(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int row_size, int col_size, int bom_num){
