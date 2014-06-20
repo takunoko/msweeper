@@ -18,60 +18,56 @@ void init_map(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int *row_size, int *col_si
 	int max_bom = 0;
 	int select = 0;
 
+	mvprintw(15,10,"Pless Space Key");
+	mvprintw(16,10," Start game!");	
+	mvprintw(10,20,"col");
+	mvprintw(11,20,"%4d",*col_size);
+	mvprintw(10,30,"bom");
+	mvprintw(11,30,"%4d",*bom);
+	mvprintw(10,11,"row");
+	mvprintw(11,10,"%4d",*row_size);
+
 	while(inputchar != ' '){
-		mvprintw(10,10,"  row     col    bom");
-		mvprintw(11,10,"%4d     %4d    %4d", *row_size, *col_size, *bom);
 		max_bom = (*row_size) * (*col_size) - 1;
+	
 		inputchar = input_key();
 		if(inputchar == KEY_RIGHT){
 			select = (select+1) % SELECT_SIZE;
 		}else if(inputchar == KEY_LEFT){
 			select = (select+SELECT_SIZE-1) % SELECT_SIZE;
-		}else{
-			switch(select){
-				case 0:
-					if(inputchar == KEY_UP)
-						*row_size = ((*row_size) % (MAP_MAX_ROW-2))+1;
-					if(inputchar == KEY_DOWN)
-						*row_size = (((*row_size)+(MAP_MAX_ROW-3-1)) % (MAP_MAX_ROW-2))+1;
-					break;
-				case 1:
-					if(inputchar == KEY_UP)
-						*col_size = ((*col_size) % (MAP_MAX_COL-2))+1;
-					if(inputchar == KEY_DOWN)
-						*col_size = (((*col_size)+(MAP_MAX_COL-3-1)) % (MAP_MAX_COL-2))+1;
-					break;
-				case 2:
-					if(inputchar == KEY_UP)
-						*bom = ((*bom) % (max_bom))+1;
-					if(inputchar == KEY_DOWN)
-						*bom = (((*bom)+(max_bom-2)) % max_bom)+1;
-					break;
-			}
 		}
+		switch(select){
+			case 0:
+				if(inputchar == KEY_UP)
+					*row_size = ((*row_size) % (MAP_MAX_ROW-2))+1;
+				if(inputchar == KEY_DOWN)
+					*row_size = (((*row_size)+(MAP_MAX_ROW-3-1)) % (MAP_MAX_ROW-2))+1;
+				mvprintw(11,10,"%4d",*row_size);
+				break;
+			case 1:
+				if(inputchar == KEY_UP)
+					*col_size = ((*col_size) % (MAP_MAX_COL-2))+1;
+				if(inputchar == KEY_DOWN)
+					*col_size = (((*col_size)+(MAP_MAX_COL-3-1)) % (MAP_MAX_COL-2))+1;
+				mvprintw(11,20,"%4d",*col_size);
+				break;
+			case 2:
+				if(inputchar == KEY_UP)
+					*bom = ((*bom) % (max_bom))+1;
+				if(inputchar == KEY_DOWN)
+					*bom = (((*bom)+(max_bom-2)) % max_bom)+1;
+				mvprintw(11,30,"%4d",*bom);
+				break;
+			default :
+				break;
+		}
+		refresh();
 	}
-	//printf("Mの数を入力してください :");
-	//scanf("%d",bom);
-
-	//printf(" x:%d, y:%d, box:%d\n この内容でゲームを開始します\n", *row_size, *col_size, *bom);
-
-	/* デバッグ用 */
-	// *row_size = 8;
-	// *col_size = 6;
-	// *bom = 10;
 
 	*pos_x = *row_size/2;
 	*pos_y = *col_size/2;
 
-	int x,y;
-	for(y=0; y<*col_size +2; y++){
-		for(x=0; x<*row_size +2; x++){
-			if(x == 0 || y == 0 || x == *row_size+1 || y == *col_size+1){
-				map_data[x][y].data = MAP_WALL;
-			}
-			map_data[x][y].disp_flg = MAP_CLOSE;
-		}
-	}
+	create_map(map_data, *row_size, *col_size);
 	create_bom(map_data, *row_size, *col_size, *bom);
 	create_map_num(map_data, *row_size, *col_size);
 	
@@ -106,6 +102,18 @@ void create_bom(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int row_size, int col_si
 	}
 }
 
+void create_map(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int row_size, int col_size){
+	int x,y;
+	for(y=0; y<col_size +2; y++){
+		for(x=0; x<row_size +2; x++){
+			if(x == 0 || y == 0 || x == row_size+1 || y == col_size+1){
+				map_data[x][y].data = MAP_WALL;
+			}
+			map_data[x][y].disp_flg = MAP_CLOSE;
+		}
+	}
+}
+
 void create_map_num(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int row_size, int col_size){
 	int x,y;
 	for(y=1; y<col_size +1; y++){
@@ -121,42 +129,31 @@ int get_risk(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int pos_x, int pos_y, int r
 	if(map_data[pos_x][pos_y].data != MAP_BOM){
 		// 左
 		if(pos_x > 1){
-			if(map_data[pos_x-1][pos_y].data == MAP_BOM){
+			if(map_data[pos_x-1][pos_y].data == MAP_BOM)
 				risk++;
-			}
 		}
 		// 右
 		if(pos_x < row_size+1){
-			if(map_data[pos_x+1][pos_y].data == MAP_BOM){
+			if(map_data[pos_x+1][pos_y].data == MAP_BOM)
 				risk++;
-			}
 		}
 		// 上
 		if(pos_y > 1){
-			if(map_data[pos_x][pos_y-1].data == MAP_BOM){
+			if(map_data[pos_x][pos_y-1].data == MAP_BOM)
 				risk++;
-			}
-			if(pos_x > 1){
-				if(map_data[pos_x-1][pos_y-1].data == MAP_BOM)
+			if(pos_x > 1 && map_data[pos_x-1][pos_y-1].data == MAP_BOM)
 					risk++;
-			}
-			if(pos_x < row_size+1){
-				if(map_data[pos_x+1][pos_y-1].data == MAP_BOM)
-					risk++;
-			}
+			if(pos_x < row_size+1 && map_data[pos_x+1][pos_y-1].data == MAP_BOM)
+				risk++;
 		}
 		// 下
 		if(pos_y < col_size+1){
 			if(map_data[pos_x][pos_y+1].data == MAP_BOM)
 				risk++;
-			if(pos_x > 1){
-				if(map_data[pos_x-1][pos_y+1].data == MAP_BOM)
-					risk++;
-			}
-			if(pos_x < row_size+1){
-				if(map_data[pos_x+1][pos_y+1].data == MAP_BOM)
-					risk++;
-			}
+			if(pos_x > 1 && map_data[pos_x-1][pos_y+1].data == MAP_BOM)
+				risk++;
+			if(pos_x < row_size+1 && map_data[pos_x+1][pos_y+1].data == MAP_BOM)
+				risk++;
 		}	
 	}else{
 		risk = MAP_BOM;
@@ -182,4 +179,7 @@ void init_char_color(){
 	init_pair( MAP_WALL, COLOR_BLACK, COLOR_WHITE);
 	init_pair( MAP_BOM, COLOR_RED, COLOR_RED);
 	init_pair( MAP_CLOSE, COLOR_WHITE, COLOR_WHITE);
+
+	init_pair( GAME_OVER, COLOR_WHITE, COLOR_RED);
+	init_pair( GAME_CLEAR, COLOR_WHITE, COLOR_BLUE);
 }

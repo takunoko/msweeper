@@ -8,18 +8,13 @@
 #include "init_game.h"
 
 int main(void){
-	int game_status = 0;
+	int game_status = GAME_PLAY;
 	int input_char = ' ';
 
 	init_curses();
 	init_app();
 
-	while(input_char != 'q'){
-		game_status = game_loop();
-
-		mvprintw( 30, 0 ,"GEME END? :q ");
-		input_char = input_key();
-	}
+	game_main();
 
 	end_curses();
 

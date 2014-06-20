@@ -4,9 +4,18 @@
 #include "ms_game.h"
 #include "init_game.h"
 
+void game_main(){
+	int input_char = ' ';
+
+	while(input_char != 'q'){
+		//このループにもうちょい意味を持たせたい
+		game_loop();
+	}
+}
+
 // 1回のゲームは、この中でループ
 int game_loop(){
-	int game_status;
+	int game_status = GAME_PLAY;
 	int input_char = ' ';
 
 	MAP map_data[(MAP_MAX_ROW)][(MAP_MAX_COL)];
@@ -14,13 +23,28 @@ int game_loop(){
 	int pos_x, pos_y;
 
 	init_map(map_data, &map_row_size, &map_col_size, &bom, &pos_x, &pos_y);
-	while(input_char != 'q'){
+
+	while(game_status == GAME_PLAY){
 		disp_game( map_data, map_row_size, map_col_size, pos_x, pos_y);
 		input_char = input_key();
 		move_pos( map_data,  input_char, map_row_size, map_col_size, &pos_x, &pos_y);
+		game_status = status_check( map_data, map_row_size, map_col_size, bom);
+
+		switch (game_status){
+			case GAME_OVER:
+				game_over( map_data, map_row_size, map_col_size);
+				init_map(map_data, &map_row_size, &map_col_size, &bom, &pos_x, &pos_y);
+				break;
+			case GAME_CLEAR:
+				game_clear( map_data, map_row_size, map_col_size);
+				init_map(map_data, &map_row_size, &map_col_size, &bom, &pos_x, &pos_y);
+				break;
+			default :
+				break;
+		}
 	}
 
-	return GAME_OVER;
+	return 0;
 }
 
 // ゲーム画面の描画
@@ -29,7 +53,6 @@ void disp_game(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int row_size, int col_siz
 	for(y=0; y<col_size+2; y++){
 		for(x=0; x<row_size+2; x++){
 			switch(map_data[x][y].disp_flg){
-			//switch(MAP_OPEN){
 				case MAP_OPEN:
 					attron(COLOR_PAIR(map_data[x][y].data));
 					switch(map_data[x][y].data){
@@ -49,10 +72,10 @@ void disp_game(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int row_size, int col_siz
 					break;
 
 				case MAP_FLAG:
-						attron(COLOR_PAIR(MAP_WALL));
-						mvaddch(y,x*2,'F');
+					attron(COLOR_PAIR(MAP_WALL));
+					mvaddch(y,x*2,'F');
 					break;
-				
+
 				default:
 					switch(map_data[x][y].data){
 						case MAP_WALL:
@@ -108,6 +131,7 @@ int input_key(){
 	}while(flg == 1);
 	return ch;
 }
+
 // 移動イベント(キーボードイベント)
 void move_pos(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int ch, int row_size, int col_size, int *pos_x, int *pos_y){
 	switch(ch){
@@ -140,73 +164,98 @@ void move_pos(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int ch, int row_size, int 
 			}
 	}
 }
+
 // マップの開くが選択された時
 void map_open(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int x, int y, int row_size, int col_size){
-	if( map_data[x][y].data == MAP_BOM){
-	}else{
-		if(map_data[x][y].data == MAP_NONE){
+	if(map_data[x][y].disp_flg != MAP_FLAG){
 			open_0( map_data, x, y);
-			mvaddch(20,20,'i');
-		}else{
-			map_data[x][y].disp_flg = MAP_OPEN;
-			mvaddch(20,20,'k');
+	}
+}
+
+// 0が続く限りマップを開き続ける
+void open_0(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int x, int y){
+	if(map_data[x][y].disp_flg != MAP_OPEN){
+		map_data[x][y].disp_flg = MAP_OPEN;
+		if(map_data[x][y].data == MAP_NONE){
+			open_0(map_data, x, y-1);
+			open_0(map_data, x-1, y);
+			open_0(map_data, x+1, y);
+			open_0(map_data, x, y+1);
+			open_0(map_data, x-1, y-1);
+			open_0(map_data, x+1, y+1);
+			open_0(map_data, x-1, y+1);
+			open_0(map_data, x+1, y-1);
 		}
 	}
 }
-// 0が続く限りマップを開き続ける
-void open_0(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int x, int y){
-	map_data[x][y].disp_flg = MAP_OPEN;
-	// 上
-	if(map_data[x][y-1].data != MAP_WALL){
-		if(map_data[x][y-1].data == MAP_NONE && map_data[x][y-1].disp_flg != MAP_OPEN)
-			open_0(map_data, x, y-1);
-		else
-			map_data[x][y-1].disp_flg = MAP_OPEN;
-	}
-	//左
-	if(map_data[x-1][y].data != MAP_WALL){
-		if(map_data[x-1][y].data == MAP_NONE && map_data[x-1][y].disp_flg != MAP_OPEN)
-			open_0(map_data, x-1, y);
-		else
-			map_data[x-1][y].disp_flg = MAP_OPEN;
-	}
-	//下
-	if(map_data[x][y+1].data != MAP_WALL){
-		if(map_data[x][y+1].data == MAP_NONE && map_data[x][y+1].disp_flg != MAP_OPEN)
-			open_0(map_data, x, y+1);
-		else
-			map_data[x][y+1].disp_flg = MAP_OPEN;
-	}
-	//右
-	if(map_data[x+1][y].data != MAP_WALL){
-		if(map_data[x+1][y].data == MAP_NONE && map_data[x+1][y].disp_flg != MAP_OPEN)
-			open_0(map_data, x+1, y);
-		else
-			map_data[x+1][y].disp_flg = MAP_OPEN;
-	}
 
-	if(map_data[x-1][y-1].data != MAP_WALL){
-		if(map_data[x-1][y-1].data== MAP_NONE && map_data[x-1][y-1].disp_flg != MAP_OPEN)
-			open_0(map_data, x-1, y-1);
-		else
-			map_data[x-1][y-1].disp_flg = MAP_OPEN;
+//ゲームオーバーでの処理
+void game_over(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int x, int y){
+	int i=0;
+	clear();
+
+	attron(COLOR_PAIR(GAME_OVER));
+	mvprintw( 1,i,"       GGGGG         A        E         E   EEEEEEE             ");
+	mvprintw( 2,i,"      G     G       A A       EE       EE   E                   ");
+	mvprintw( 3,i,"     G             A   A      E E     E E   E                   ");
+	mvprintw( 4,i,"     G    GGGG     AAA A      E E     E E   EEEEEE              ");
+	mvprintw( 5,i,"     G       G    A     A     E  E   E  E   E                   ");
+	mvprintw( 6,i,"      G     G     A     A     E   E E   E   E                   ");
+	mvprintw( 7,i,"       GGGGG     A       A    E    E    E   EEEEEEE             ");
+ 	mvprintw( 8,i,"                                                                ");
+	mvprintw( 9,i,"       OOOOO    V        V   EEEEEEE    RRRRRRR                 ");
+	mvprintw(10,i,"      O     O   V        V   E          R      R                ");
+	mvprintw(11,i,"     O       O   V      V    E          R     R                 ");
+	mvprintw(12,i,"     O       O    V    V     EEEEEE     RRRRRR                  ");
+	mvprintw(13,i,"     O       O    V    V     E          R     R                 ");
+	mvprintw(14,i,"      O     O      V  V      E          R      R                ");
+	mvprintw(15,i,"       OOOOO        VV       EEEEEEE    R       R               ");
+	input_key();
+}
+
+//クリアの処理
+void game_clear(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int x, int y){
+	clear();
+	int i=0;
+
+	attron(COLOR_PAIR(GAME_CLEAR));
+	{			
+		mvprintw( 1,i,"       GGGGG         A        E         E   EEEEEEE             ");
+		mvprintw( 2,i,"      G     G       A A       EE       EE   E                   ");
+		mvprintw( 3,i,"     G             A   A      E E     E E   E                   ");
+		mvprintw( 4,i,"     G    GGGG     AAA A      E E     E E   EEEEEE              ");
+		mvprintw( 5,i,"     G       G    A     A     E  E   E  E   E                   ");
+		mvprintw( 6,i,"      G     G     A     A     E   E E   E   E                   ");
+		mvprintw( 7,i,"       GGGGG     A       A    E    E    E   EEEEEEE             ");
+		mvprintw( 8,i,"                                                                ");
+		mvprintw( 9,i,"        CCC   L        EEEEEEE      A      RRRRRRR              ");
+		mvprintw(10,i,"       C   C  L        E           A A     R      R             ");
+		mvprintw(11,i,"      C       L        E          A   A    R     R              ");
+		mvprintw(12,i,"      C       L        EEEEEE     AAA A    RRRRRR               ");
+		mvprintw(13,i,"      C       L        E         A     A   R     R              ");
+		mvprintw(14,i,"       C   C  L        E         A     A   R      R             ");
+		mvprintw(15,i,"        CCC   LLLLLLL  EEEEEEE  A       A  R       R            ");
 	}
-	if(map_data[x-1][y+1].data != MAP_WALL){
-		if(map_data[x-1][y+1].data == MAP_NONE && map_data[x-1][y+1].disp_flg != MAP_OPEN)
-			open_0(map_data, x-1, y+1);
-		else
-			map_data[x-1][y+1].disp_flg = MAP_OPEN;
+	input_key();
+}
+
+//ゲームのクリアorゲームオーバー判定
+int status_check(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL],int row_size, int col_size, int bom){
+	int x,y;
+	int gameover_flg = 0;
+	int open_sum = 0;
+
+	for(y=1; y < row_size+1; y++){
+		for (x = 1; x < col_size+1; x++) {
+			if(map_data[x][y].disp_flg == MAP_OPEN){
+				open_sum++;
+				if(map_data[x][y].data == MAP_BOM)
+					return GAME_OVER;
+			}
+		}
 	}
-	if(map_data[x+1][y+1].data != MAP_WALL){
-		if(map_data[x+1][y+1].data == MAP_NONE && map_data[x+1][y+1].disp_flg != MAP_OPEN)
-			open_0(map_data, x+1, y+1);
-		else
-			map_data[x+1][y+1].disp_flg = MAP_OPEN;
+	if( (row_size * col_size)-bom == open_sum){
+		return GAME_CLEAR;
 	}
-	if(map_data[x+1][y-1].data != MAP_WALL){
-		if(map_data[x+1][y-1].data == MAP_NONE && map_data[x+1][y-1].disp_flg != MAP_OPEN)
-			open_0(map_data, x+1, y-1);
-		else
-			map_data[x+1][y-1].disp_flg = MAP_OPEN;
-	}
+	return GAME_PLAY;
 }
