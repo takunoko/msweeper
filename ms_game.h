@@ -14,14 +14,18 @@
 #define GAME_OVER	21
 #define GAME_CLEAR 22
 
+#define DEFAULT_COLOR 99
+
 typedef struct{
 	int data;
 	int disp_flg;
 }MAP;
 
 void game_main(void);
-int game_loop(void);
+int game_loop(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int, int, int, int, int); 
 void disp_game(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int, int, int, int);
+void disp_dot(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int, int);
+void disp_bom(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int, int);
 void move_pos(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int, int, int, int *, int *);
 int input_key(void);
 void map_open(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int, int, int, int);

@@ -4,25 +4,25 @@
 #include "ms_game.h"
 #include "init_game.h"
 
+
+// 引数その他をもうちょいしっかりやる
 void game_main(){
 	int input_char = ' ';
 
+	MAP map_data[(MAP_MAX_ROW)][(MAP_MAX_COL)];
+	int pos_x, pos_y;
+	int map_row_size, map_col_size, bom;
+
 	while(input_char != 'q'){
-		//このループにもうちょい意味を持たせたい
-		game_loop();
+		init_map(map_data, &map_row_size, &map_col_size, &bom, &pos_x, &pos_y);
+		game_loop(map_data, map_row_size, map_col_size, pos_x, pos_y, bom);
 	}
 }
 
 // 1回のゲームは、この中でループ
-int game_loop(){
+int game_loop(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int map_row_size, int map_col_size, int pos_x, int pos_y, int bom){
 	int game_status = GAME_PLAY;
 	int input_char = ' ';
-
-	MAP map_data[(MAP_MAX_ROW)][(MAP_MAX_COL)];
-	int map_row_size, map_col_size, bom;
-	int pos_x, pos_y;
-
-	init_map(map_data, &map_row_size, &map_col_size, &bom, &pos_x, &pos_y);
 
 	while(game_status == GAME_PLAY){
 		disp_game( map_data, map_row_size, map_col_size, pos_x, pos_y);
@@ -33,18 +33,17 @@ int game_loop(){
 		switch (game_status){
 			case GAME_OVER:
 				game_over( map_data, map_row_size, map_col_size);
-				init_map(map_data, &map_row_size, &map_col_size, &bom, &pos_x, &pos_y);
 				break;
 			case GAME_CLEAR:
 				game_clear( map_data, map_row_size, map_col_size);
-				init_map(map_data, &map_row_size, &map_col_size, &bom, &pos_x, &pos_y);
 				break;
 			default :
 				break;
 		}
 	}
 
-	return 0;
+	//とりあえずgame_statusを返しておく
+	return game_status;
 }
 
 // ゲーム画面の描画
@@ -52,47 +51,56 @@ void disp_game(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int row_size, int col_siz
 	int x,y;
 	for(y=0; y<col_size+2; y++){
 		for(x=0; x<row_size+2; x++){
-			switch(map_data[x][y].disp_flg){
-				case MAP_OPEN:
-					attron(COLOR_PAIR(map_data[x][y].data));
-					switch(map_data[x][y].data){
-						case MAP_WALL:
-							mvaddch(y,x*2,'+');
-							break;
-						case MAP_NONE:
-							mvaddch(y,x*2,' ');
-							break;
-						case MAP_BOM:
-							mvaddch(y,x*2,'*');
-							break;
-						default:
-							mvaddch(y,x*2,map_data[x][y].data + '0');
-							break;
-					}
-					break;
+			disp_dot(map_data, x, y);
+		}
+	}		
 
-				case MAP_FLAG:
-					attron(COLOR_PAIR(MAP_WALL));
-					mvaddch(y,x*2,'F');
-					break;
+	attron(COLOR_PAIR(MAP_NONE));
+	mvprintw( col_size + 3, 0, "move 'arrow key' or 'h,j,k,l'");
+	mvprintw( col_size + 5, 0, "Map open : Space key");
+	mvprintw( col_size + 7, 0, "Flag : F key");
 
+	move( (pos_y+1), (pos_x+1)*2);
+	refresh();
+}
+
+void disp_dot(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int x, int y){
+	switch(map_data[x][y].disp_flg){
+		case MAP_OPEN:
+			attron(COLOR_PAIR(map_data[x][y].data));
+			switch(map_data[x][y].data){
+				case MAP_WALL:
+					mvaddch(y,x*2,'+');
+					break;
+				case MAP_NONE:
+					mvaddch(y,x*2,' ');
+					break;
+				case MAP_BOM:
+					mvaddch(y,x*2,'*');
+					break;
 				default:
-					switch(map_data[x][y].data){
-						case MAP_WALL:
-							attron(COLOR_PAIR(MAP_WALL));
-							mvaddch(y,x*2,'+');
-							break;
-						default:
-							attron(COLOR_PAIR(MAP_CLOSE));
-							mvaddch(y,x*2,'#');
-							break;
-					}
+					mvaddch(y,x*2,map_data[x][y].data + '0');
 					break;
 			}
-		}
-		move( (pos_y+1), (pos_x+1)*2);
+			break;
 
-		refresh();
+		case MAP_FLAG:
+			attron(COLOR_PAIR(MAP_WALL));
+			mvaddch(y,x*2,'F');
+			break;
+
+		default:
+			switch(map_data[x][y].data){
+				case MAP_WALL:
+					attron(COLOR_PAIR(MAP_WALL));
+					mvaddch(y,x*2,'+');
+					break;
+				default:
+					attron(COLOR_PAIR(MAP_CLOSE));
+					mvaddch(y,x*2,'#');
+					break;
+			}
+			break;
 	}
 }
 
@@ -100,35 +108,23 @@ void disp_game(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int row_size, int col_siz
 int input_key(){
 	int ch;
 	int flg=0;
-	do{
-		ch = getch();
-		switch(ch){
-			case 'h':
-				ch = KEY_LEFT;
-				break;
-			case 'j':
-				ch = KEY_DOWN;
-				break;
-			case 'k':
-				ch = KEY_UP;
-				break;
-			case 'l':
-				ch = KEY_RIGHT;
-				break;
-			case KEY_LEFT:
-			case KEY_RIGHT:
-			case KEY_UP:
-			case KEY_DOWN:
-			case ' ':
-			case 'f':
-			case 'F':
-			case 'q':
-				break;
-			default :
-				flg = 1;
-				break;
-		}	
-	}while(flg == 1);
+	ch = getch();
+	switch(ch){
+		case 'h':
+			ch = KEY_LEFT;
+			break;
+		case 'j':
+			ch = KEY_DOWN;
+			break;
+		case 'k':
+			ch = KEY_UP;
+			break;
+		case 'l':
+			ch = KEY_RIGHT;
+			break;
+		default :
+			break;
+	}	
 	return ch;
 }
 
@@ -174,7 +170,7 @@ void map_open(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int x, int y, int row_size
 
 // 0が続く限りマップを開き続ける
 void open_0(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int x, int y){
-	if(map_data[x][y].disp_flg != MAP_OPEN){
+	if(map_data[x][y].disp_flg != MAP_OPEN && map_data[x][y].data != MAP_WALL){
 		map_data[x][y].disp_flg = MAP_OPEN;
 		if(map_data[x][y].data == MAP_NONE){
 			open_0(map_data, x, y-1);
@@ -191,53 +187,89 @@ void open_0(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int x, int y){
 
 //ゲームオーバーでの処理
 void game_over(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int x, int y){
-	int i=0;
-	clear();
+	int start_y = y+2;
+	int start_x = 0;
 
-	attron(COLOR_PAIR(GAME_OVER));
-	mvprintw( 1,i,"       GGGGG         A        E         E   EEEEEEE             ");
-	mvprintw( 2,i,"      G     G       A A       EE       EE   E                   ");
-	mvprintw( 3,i,"     G             A   A      E E     E E   E                   ");
-	mvprintw( 4,i,"     G    GGGG     AAA A      E E     E E   EEEEEE              ");
-	mvprintw( 5,i,"     G       G    A     A     E  E   E  E   E                   ");
-	mvprintw( 6,i,"      G     G     A     A     E   E E   E   E                   ");
-	mvprintw( 7,i,"       GGGGG     A       A    E    E    E   EEEEEEE             ");
- 	mvprintw( 8,i,"                                                                ");
-	mvprintw( 9,i,"       OOOOO    V        V   EEEEEEE    RRRRRRR                 ");
-	mvprintw(10,i,"      O     O   V        V   E          R      R                ");
-	mvprintw(11,i,"     O       O   V      V    E          R     R                 ");
-	mvprintw(12,i,"     O       O    V    V     EEEEEE     RRRRRR                  ");
-	mvprintw(13,i,"     O       O    V    V     E          R     R                 ");
-	mvprintw(14,i,"      O     O      V  V      E          R      R                ");
-	mvprintw(15,i,"       OOOOO        VV       EEEEEEE    R       R               ");
-	input_key();
+	int input = ' ';
+
+	disp_game( map_data, x, y, 1,1);
+	disp_bom( map_data, x,y);
+
+	{
+		attron(COLOR_PAIR(GAME_OVER));
+		mvprintw( start_y+1, start_x, "       GGGGG         A        E         E   EEEEEEE      ");
+		mvprintw( start_y+2, start_x, "      G     G       A A       EE       EE   E            ");
+		mvprintw( start_y+3, start_x, "     G             A   A      E E     E E   E            ");
+		mvprintw( start_y+4, start_x, "     G    GGGG     AAA A      E E     E E   EEEEEE       ");
+		mvprintw( start_y+5, start_x, "     G       G    A     A     E  E   E  E   E            ");
+		mvprintw( start_y+6, start_x, "      G     G     A     A     E   E E   E   E            ");
+		mvprintw( start_y+7, start_x, "       GGGGG     A       A    E    E    E   EEEEEEE      ");
+		mvprintw( start_y+8, start_x, "                                                         ");
+		mvprintw( start_y+9, start_x, "       OOOOO     V        V     EEEEEEE    RRRRRRR       ");
+		mvprintw( start_y+10, start_x,"      O     O    V        V     E          R      R      ");
+		mvprintw( start_y+11, start_x,"     O       O    V      V      E          R     R       ");
+		mvprintw( start_y+12, start_x,"     O       O     V    V       EEEEEE     RRRRRR        ");
+		mvprintw( start_y+13, start_x,"     O       O     V    V       E          R     R       ");
+		mvprintw( start_y+14, start_x,"      O     O       V  V        E          R      R      ");
+		mvprintw( start_y+15, start_x,"       OOOOO         VV         EEEEEEE    R       R     ");
+
+		attron(COLOR_PAIR(MAP_NONE));
+		mvprintw( start_y+17, start_x+4," Please q");
+		mvprintw( start_y+18, start_x+4," Start new game ");
+	}
+	do{
+		input = input_key();
+	}while(input != 'q');
 }
-
 //クリアの処理
 void game_clear(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int x, int y){
-	clear();
-	int i=0;
+	int start_y = y+2;
+	int start_x = 0;
+
+	int input = ' ';
+
+	disp_game( map_data, x, y, 1,1);
+	disp_bom( map_data, x,y);
 
 	attron(COLOR_PAIR(GAME_CLEAR));
 	{			
-		mvprintw( 1,i,"       GGGGG         A        E         E   EEEEEEE             ");
-		mvprintw( 2,i,"      G     G       A A       EE       EE   E                   ");
-		mvprintw( 3,i,"     G             A   A      E E     E E   E                   ");
-		mvprintw( 4,i,"     G    GGGG     AAA A      E E     E E   EEEEEE              ");
-		mvprintw( 5,i,"     G       G    A     A     E  E   E  E   E                   ");
-		mvprintw( 6,i,"      G     G     A     A     E   E E   E   E                   ");
-		mvprintw( 7,i,"       GGGGG     A       A    E    E    E   EEEEEEE             ");
-		mvprintw( 8,i,"                                                                ");
-		mvprintw( 9,i,"        CCC   L        EEEEEEE      A      RRRRRRR              ");
-		mvprintw(10,i,"       C   C  L        E           A A     R      R             ");
-		mvprintw(11,i,"      C       L        E          A   A    R     R              ");
-		mvprintw(12,i,"      C       L        EEEEEE     AAA A    RRRRRR               ");
-		mvprintw(13,i,"      C       L        E         A     A   R     R              ");
-		mvprintw(14,i,"       C   C  L        E         A     A   R      R             ");
-		mvprintw(15,i,"        CCC   LLLLLLL  EEEEEEE  A       A  R       R            ");
+		mvprintw( start_y+1, start_x, "       GGGGG         A        E         E   EEEEEEE      ");
+		mvprintw( start_y+2, start_x, "      G     G       A A       EE       EE   E            ");
+		mvprintw( start_y+3, start_x, "     G             A   A      E E     E E   E            ");
+		mvprintw( start_y+4, start_x, "     G    GGGG     AAA A      E E     E E   EEEEEE       ");
+		mvprintw( start_y+5, start_x, "     G       G    A     A     E  E   E  E   E            ");
+		mvprintw( start_y+6, start_x, "      G     G     A     A     E   E E   E   E            ");
+		mvprintw( start_y+7, start_x, "       GGGGG     A       A    E    E    E   EEEEEEE      ");
+		mvprintw( start_y+8, start_x, "                                                         ");
+		mvprintw( start_y+9, start_x, "        CCC   L        EEEEEEE      A      RRRRRRR       ");
+		mvprintw( start_y+10, start_x,"       C   C  L        E           A A     R      R      ");
+		mvprintw( start_y+11, start_x,"      C       L        E          A   A    R     R       ");
+		mvprintw( start_y+12, start_x,"      C       L        EEEEEE     AAA A    RRRRRR        ");
+		mvprintw( start_y+13, start_x,"      C       L        E         A     A   R     R       ");
+		mvprintw( start_y+14, start_x,"       C   C  L        E         A     A   R      R      ");
+		mvprintw( start_y+15, start_x,"        CCC   LLLLLLL  EEEEEEE  A       A  R       R     ");
+
+		attron(COLOR_PAIR(MAP_NONE));
+		mvprintw( start_y+17, start_x+4," Please any key ");
+		mvprintw( start_y+18, start_x+4," Start new game ");
 	}
-	input_key();
+	do{
+		input = input_key();
+	}while(input != 'q');
 }
+
+void disp_bom(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int x, int y){
+	int i,j;
+	for(j=1; j<y+2; j++){
+		for(i=1; i<x+2; i++){
+			if(map_data[i][j].data == MAP_BOM){
+				attron(COLOR_PAIR(MAP_BOM));
+				mvaddch(j,i*2,'*');
+				}
+		}
+	}
+}
+
 
 //ゲームのクリアorゲームオーバー判定
 int status_check(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL],int row_size, int col_size, int bom){
@@ -245,8 +277,15 @@ int status_check(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL],int row_size, int col_si
 	int gameover_flg = 0;
 	int open_sum = 0;
 
-	for(y=1; y < row_size+1; y++){
-		for (x = 1; x < col_size+1; x++) {
+	// Debug
+	{
+		mvprintw(30,3,"row: %d",row_size);
+		mvprintw(31,3,"col: %d",col_size);
+		mvprintw(32,3,"bom: %d",bom);
+	}
+
+	for(y=1; y < col_size+1; y++){
+		for (x = 1; x < row_size+1; x++) {
 			if(map_data[x][y].disp_flg == MAP_OPEN){
 				open_sum++;
 				if(map_data[x][y].data == MAP_BOM)
@@ -254,6 +293,9 @@ int status_check(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL],int row_size, int col_si
 			}
 		}
 	}
+	mvprintw(34,3,"open_sum: %d",open_sum);
+	mvprintw(35,3,"row*col-bom: %d",(row_size * col_size)-bom);
+
 	if( (row_size * col_size)-bom == open_sum){
 		return GAME_CLEAR;
 	}

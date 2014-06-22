@@ -11,50 +11,45 @@ void init_app(){
 }
 
 void init_map(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int *row_size, int *col_size, int *bom, int *pos_x, int *pos_y){
-	*row_size = *col_size = 10;
-	*bom = 10;
-
 	int inputchar = '0';
 	int max_bom = 0;
 	int select = 0;
 
-	mvprintw(15,10,"Pless Space Key");
-	mvprintw(16,10," Start game!");	
-	mvprintw(10,20,"col");
-	mvprintw(11,20,"%4d",*col_size);
-	mvprintw(10,30,"bom");
-	mvprintw(11,30,"%4d",*bom);
-	mvprintw(10,11,"row");
-	mvprintw(11,10,"%4d",*row_size);
+	*row_size = *col_size = *bom = 10;
+
+	disp_default_menu( *row_size, *col_size, *bom);
 
 	while(inputchar != ' '){
 		max_bom = (*row_size) * (*col_size) - 1;
 	
 		inputchar = input_key();
-		if(inputchar == KEY_RIGHT){
-			select = (select+1) % SELECT_SIZE;
-		}else if(inputchar == KEY_LEFT){
-			select = (select+SELECT_SIZE-1) % SELECT_SIZE;
+		switch(inputchar){
+			case KEY_RIGHT:
+				select = (select+1) % SELECT_SIZE;
+				break;
+			case KEY_LEFT:
+				select = (select+SELECT_SIZE-1) % SELECT_SIZE;
+				break;
 		}
 		switch(select){
 			case 0:
 				if(inputchar == KEY_UP)
 					*row_size = ((*row_size) % (MAP_MAX_ROW-2))+1;
-				if(inputchar == KEY_DOWN)
+				else if(inputchar == KEY_DOWN)
 					*row_size = (((*row_size)+(MAP_MAX_ROW-3-1)) % (MAP_MAX_ROW-2))+1;
 				mvprintw(11,10,"%4d",*row_size);
 				break;
 			case 1:
 				if(inputchar == KEY_UP)
 					*col_size = ((*col_size) % (MAP_MAX_COL-2))+1;
-				if(inputchar == KEY_DOWN)
+				else if(inputchar == KEY_DOWN)
 					*col_size = (((*col_size)+(MAP_MAX_COL-3-1)) % (MAP_MAX_COL-2))+1;
 				mvprintw(11,20,"%4d",*col_size);
 				break;
 			case 2:
 				if(inputchar == KEY_UP)
 					*bom = ((*bom) % (max_bom))+1;
-				if(inputchar == KEY_DOWN)
+				else if(inputchar == KEY_DOWN)
 					*bom = (((*bom)+(max_bom-2)) % max_bom)+1;
 				mvprintw(11,30,"%4d",*bom);
 				break;
@@ -72,6 +67,23 @@ void init_map(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int *row_size, int *col_si
 	create_map_num(map_data, *row_size, *col_size);
 	
 	clear();
+}
+
+void disp_default_menu(int row_size, int col_size, int bom){
+	clear();
+	attron(COLOR_PAIR(DEFAULT_COLOR));
+
+	mvprintw(18,10,"Use arrow key and value change.");
+	mvprintw(19,10,"Start game\t: Space key");	
+	mvprintw(20,10,"End game \t: 'q' key");
+
+	mvprintw(10,21,"col");
+	mvprintw(11,20,"%4d",col_size);
+	mvprintw(10,31,"bom");
+	mvprintw(11,30,"%4d",bom);
+	//カーソルの位置をrowに合わせる手間を省くために、最後にrowを表示
+	mvprintw(10,11,"row");
+	mvprintw(11,10,"%4d",row_size);
 }
 
 void create_bom(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int row_size, int col_size, int bom_num){
