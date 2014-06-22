@@ -1,11 +1,11 @@
 #include <curses.h>
+#include <unistd.h> // sleepを使うためのヘッダファル
 
 #include "msweeper.h"
 #include "ms_game.h"
 #include "init_game.h"
 
-
-// 引数その他をもうちょいしっかりやる
+// ゲームのループを何度も回す
 void game_main(){
 	int input_char = ' ';
 
@@ -13,10 +13,27 @@ void game_main(){
 	int pos_x, pos_y;
 	int map_row_size, map_col_size, bom;
 
-	while(input_char != 'q'){
+	int play_flg = 1;
+
+	while(play_flg == 1){
 		init_map(map_data, &map_row_size, &map_col_size, &bom, &pos_x, &pos_y);
 		game_loop(map_data, map_row_size, map_col_size, pos_x, pos_y, bom);
+	
+		clear();
+		attron(COLOR_PAIR(MAP_NONE));
+		mvprintw(9,10, "    Next game?   ");
+		mvprintw(10,10,"[Yes: y] [No : n]");
+
+		do{
+			input_char = input_key();
+		}while(input_char != 'y' && input_char != 'n');
+		if(input_char == 'n')
+			play_flg = 0;
 	}
+	clear();
+	mvprintw(10,10,"Thank you for playing!!!");
+	refresh();
+	sleep(2);
 }
 
 // 1回のゲームは、この中でループ
@@ -49,6 +66,8 @@ int game_loop(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int map_row_size, int map_
 // ゲーム画面の描画
 void disp_game(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int row_size, int col_size, int pos_x, int pos_y){
 	int x,y;
+	
+	clear();
 	for(y=0; y<col_size+2; y++){
 		for(x=0; x<row_size+2; x++){
 			disp_dot(map_data, x, y);
@@ -185,6 +204,41 @@ void open_0(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int x, int y){
 	}
 }
 
+// ゲームが終了した時に表示する
+void disp_bom(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int x, int y){
+	int i,j;
+	for(j=1; j<y+2; j++){
+		for(i=1; i<x+2; i++){
+			if(map_data[i][j].data == MAP_BOM){
+				attron(COLOR_PAIR(MAP_BOM));
+				mvaddch(j,i*2,'*');
+				}
+		}
+	}
+}
+
+//ゲームのクリアorゲームオーバー判定
+int status_check(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL],int row_size, int col_size, int bom){
+	int x,y;
+	int gameover_flg = 0;
+	int open_sum = 0;
+
+	for(y=1; y < col_size+1; y++){
+		for (x = 1; x < row_size+1; x++) {
+			if(map_data[x][y].disp_flg == MAP_OPEN){
+				open_sum++;
+				if(map_data[x][y].data == MAP_BOM)
+					return GAME_OVER;
+			}
+		}
+	}
+
+	if( (row_size * col_size)-bom == open_sum){
+		return GAME_CLEAR;
+	}
+	return GAME_PLAY;
+}
+
 //ゲームオーバーでの処理
 void game_over(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int x, int y){
 	int start_y = y+2;
@@ -214,8 +268,7 @@ void game_over(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int x, int y){
 		mvprintw( start_y+15, start_x,"       OOOOO         VV         EEEEEEE    R       R     ");
 
 		attron(COLOR_PAIR(MAP_NONE));
-		mvprintw( start_y+17, start_x+4," Please q");
-		mvprintw( start_y+18, start_x+4," Start new game ");
+		mvprintw( start_y+17, start_x+4," Please push : 'q'");
 	}
 	do{
 		input = input_key();
@@ -250,54 +303,9 @@ void game_clear(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int x, int y){
 		mvprintw( start_y+15, start_x,"        CCC   LLLLLLL  EEEEEEE  A       A  R       R     ");
 
 		attron(COLOR_PAIR(MAP_NONE));
-		mvprintw( start_y+17, start_x+4," Please any key ");
-		mvprintw( start_y+18, start_x+4," Start new game ");
+		mvprintw( start_y+17, start_x+4," Please push : 'q'");
 	}
 	do{
 		input = input_key();
 	}while(input != 'q');
-}
-
-void disp_bom(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int x, int y){
-	int i,j;
-	for(j=1; j<y+2; j++){
-		for(i=1; i<x+2; i++){
-			if(map_data[i][j].data == MAP_BOM){
-				attron(COLOR_PAIR(MAP_BOM));
-				mvaddch(j,i*2,'*');
-				}
-		}
-	}
-}
-
-
-//ゲームのクリアorゲームオーバー判定
-int status_check(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL],int row_size, int col_size, int bom){
-	int x,y;
-	int gameover_flg = 0;
-	int open_sum = 0;
-
-	// Debug
-	{
-		mvprintw(30,3,"row: %d",row_size);
-		mvprintw(31,3,"col: %d",col_size);
-		mvprintw(32,3,"bom: %d",bom);
-	}
-
-	for(y=1; y < col_size+1; y++){
-		for (x = 1; x < row_size+1; x++) {
-			if(map_data[x][y].disp_flg == MAP_OPEN){
-				open_sum++;
-				if(map_data[x][y].data == MAP_BOM)
-					return GAME_OVER;
-			}
-		}
-	}
-	mvprintw(34,3,"open_sum: %d",open_sum);
-	mvprintw(35,3,"row*col-bom: %d",(row_size * col_size)-bom);
-
-	if( (row_size * col_size)-bom == open_sum){
-		return GAME_CLEAR;
-	}
-	return GAME_PLAY;
 }

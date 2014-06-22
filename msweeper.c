@@ -13,9 +13,7 @@ int main(void){
 
 	init_curses();
 	init_app();
-
 	game_main();
-
 	end_curses();
 
 	return 0;

@@ -12,78 +12,85 @@ void init_app(){
 
 void init_map(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int *row_size, int *col_size, int *bom, int *pos_x, int *pos_y){
 	int inputchar = '0';
-	int max_bom = 0;
-	int select = 0;
+	int select;
 
 	*row_size = *col_size = *bom = 10;
 
 	disp_default_menu( *row_size, *col_size, *bom);
-
 	while(inputchar != ' '){
-		max_bom = (*row_size) * (*col_size) - 1;
-	
 		inputchar = input_key();
-		switch(inputchar){
-			case KEY_RIGHT:
-				select = (select+1) % SELECT_SIZE;
-				break;
-			case KEY_LEFT:
-				select = (select+SELECT_SIZE-1) % SELECT_SIZE;
-				break;
-		}
-		switch(select){
-			case 0:
-				if(inputchar == KEY_UP)
-					*row_size = ((*row_size) % (MAP_MAX_ROW-2))+1;
-				else if(inputchar == KEY_DOWN)
-					*row_size = (((*row_size)+(MAP_MAX_ROW-3-1)) % (MAP_MAX_ROW-2))+1;
-				mvprintw(11,10,"%4d",*row_size);
-				break;
-			case 1:
-				if(inputchar == KEY_UP)
-					*col_size = ((*col_size) % (MAP_MAX_COL-2))+1;
-				else if(inputchar == KEY_DOWN)
-					*col_size = (((*col_size)+(MAP_MAX_COL-3-1)) % (MAP_MAX_COL-2))+1;
-				mvprintw(11,20,"%4d",*col_size);
-				break;
-			case 2:
-				if(inputchar == KEY_UP)
-					*bom = ((*bom) % (max_bom))+1;
-				else if(inputchar == KEY_DOWN)
-					*bom = (((*bom)+(max_bom-2)) % max_bom)+1;
-				mvprintw(11,30,"%4d",*bom);
-				break;
-			default :
-				break;
-		}
+		change_val( inputchar, &select, row_size, col_size, bom);
 		refresh();
 	}
 
-	*pos_x = *row_size/2;
-	*pos_y = *col_size/2;
+	*pos_x = *row_size/2, *pos_y = *col_size/2;
 
 	create_map(map_data, *row_size, *col_size);
 	create_bom(map_data, *row_size, *col_size, *bom);
 	create_map_num(map_data, *row_size, *col_size);
-	
-	clear();
+}
+
+void change_val(int inputchar, int *select, int *row_size, int *col_size, int *bom){
+	// 行を選択
+	int max_bom;
+	max_bom = (*row_size) * (*col_size) - 1;
+
+	switch(inputchar){	
+		case KEY_RIGHT:
+			*select = (*select+1) % SELECT_SIZE;	break;
+		case KEY_LEFT:
+			*select = (*select+SELECT_SIZE-1) % SELECT_SIZE;	break;
+	}
+	// 値の変更
+	switch(*select){
+		case 0:
+			if(inputchar == KEY_UP)
+				*row_size = ((*row_size) % (MAP_MAX_ROW-2))+1;
+			else if(inputchar == KEY_DOWN)
+				*row_size = (((*row_size)+(MAP_MAX_ROW-3-1)) % (MAP_MAX_ROW-2))+1;
+			mvprintw(12,10,"%4d",*row_size);
+			break;
+		case 1:
+			if(inputchar == KEY_UP)
+				*col_size = ((*col_size) % (MAP_MAX_COL-2))+1;
+			else if(inputchar == KEY_DOWN)
+				*col_size = (((*col_size)+(MAP_MAX_COL-3-1)) % (MAP_MAX_COL-2))+1;
+			mvprintw(12,20,"%4d",*col_size);
+			break;
+		case 2:
+			if(inputchar == KEY_UP)
+				*bom = ((*bom) % (max_bom))+1;
+			else if(inputchar == KEY_DOWN)
+				*bom = (((*bom)+(max_bom-2)) % max_bom)+1;
+			mvprintw(12,30,"%4d",*bom);
+			break;
+	}
 }
 
 void disp_default_menu(int row_size, int col_size, int bom){
 	clear();
 	attron(COLOR_PAIR(DEFAULT_COLOR));
+	
+	mvprintw( 1, 3, "          ===========               ");
+	mvprintw( 2, 3, "          = Msweeper=               ");
+	mvprintw( 3, 3, "          ===========               ");
+	mvprintw( 4, 3, "                                    ");
+	mvprintw( 5, 3, "                                    ");
+	mvprintw( 6, 3, "                    j11-407         ");
+	mvprintw( 7, 3, "                      Ezawa Takuya  ");
+	mvprintw( 8, 3, "                                    ");
+	mvprintw( 9, 3, "			                               ");
 
-	mvprintw(18,10,"Use arrow key and value change.");
-	mvprintw(19,10,"Start game\t: Space key");	
-	mvprintw(20,10,"End game \t: 'q' key");
+	mvprintw(15,10,"Use arrow key and value change.");
+	mvprintw(16,10,"Start game\t: Space key");	
 
-	mvprintw(10,21,"col");
-	mvprintw(11,20,"%4d",col_size);
-	mvprintw(10,31,"bom");
-	mvprintw(11,30,"%4d",bom);
+	mvprintw(11,21,"col");
+	mvprintw(12,20,"%4d",col_size);
+	mvprintw(11,31,"bom");
+	mvprintw(12,30,"%4d",bom);
 	//カーソルの位置をrowに合わせる手間を省くために、最後にrowを表示
-	mvprintw(10,11,"row");
-	mvprintw(11,10,"%4d",row_size);
+	mvprintw(11,11,"row");
+	mvprintw(12,10,"%4d",row_size);
 }
 
 void create_bom(MAP map_data[MAP_MAX_ROW][MAP_MAX_COL], int row_size, int col_size, int bom_num){
